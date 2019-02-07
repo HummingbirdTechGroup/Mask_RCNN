@@ -877,7 +877,7 @@ def build_rpn_model(anchor_stride, anchors_per_location, depth):
     It wraps the RPN graph so it can be used multiple times with shared
     weights.
 
-    anchors_per_location: number of anchors per pixel in the feature map
+    anchors_per_location: number of anchors per pixel in the feature map (=len(anchor_ratios))
     anchor_stride: Controls the density of anchors. Typically 1 (anchors for
                    every pixel in the feature map), or 2 (every other pixel).
     depth: Depth of the backbone feature map.
