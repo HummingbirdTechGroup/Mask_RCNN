@@ -47,7 +47,7 @@ from mrcnn.config import Config
 from mrcnn import model as modellib, utils
 
 # Path to trained weights file
-COCO_WEIGHTS_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
+COCO_WEIGHTS_PATH = os.path.join(ROOT_DIR, "model_weights/mask_rcnn_coco.h5")
 
 # Directory to save logs and model checkpoints, if not provided
 # through the command line argument --logs
@@ -116,7 +116,7 @@ class PotatoDataset(utils.Dataset):
         #     'image_height': 256,
         #     'dataset_split': 'train'}}
         # We mostly care about the x and y coordinates of each region
-        annotations = json.load(open(os.path.join(dataset_dir, "hb-potato-segmentation-dataset.json")))
+        annotations = json.load(open(os.path.join(dataset_dir, "annotations.json")))
         annotations = list(annotations.values())  # don't need the dict keys
         # Our potato segmentation dataset builder saves images in the JSON even if they don't have any
         # annotations. Skip unannotated images. Keep annnotations with right subset.

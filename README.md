@@ -133,12 +133,12 @@ Python 3.4, TensorFlow 1.3, Keras 2.0.8 and other common packages listed in `req
     ```bash
     python setup.py install
     ``` 
-4. Download pre-trained COCO weights (mask_rcnn_coco.h5) from the [releases page](https://github.com/matterport/Mask_RCNN/releases).
+4. Download pre-trained COCO weights (mask_rcnn_coco.h5) from the [releases page](https://github.com/matterport/Mask_RCNN/releases) and save it in `model_weights/`.
 
 ## Datasets
 
-Please upload the potato dataset and any other dataset under `datasets/dataset_considered` and put the images in `images`
-and annotations in `annotations`.
+Please upload the potato dataset and any other dataset under `datasets/dataset_considered` and put the images in `datasets/dataset_considered/images`
+and in `datasets/dataset_considered/annotations.json`.
 
 For the potato dataset, annotations should be a .json file with the following format (see [potato dataset confluence_page](https://hummingbirdtech.atlassian.net/wiki/spaces/HT/pages/600604673/2.+Mask+R-CNN+-+DataSet+Preparation)).
 
