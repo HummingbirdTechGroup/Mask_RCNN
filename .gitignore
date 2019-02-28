@@ -31,6 +31,8 @@ wheels/
 .installed.cfg
 *.egg
 
+
+
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
@@ -46,6 +48,7 @@ pip-delete-this-directory.txt
 
 # Jupyter Notebook
 .ipynb_checkpoints
+*.ipynb_checkpoints
 
 # pyenv
 .python-version
