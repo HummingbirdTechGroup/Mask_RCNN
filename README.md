@@ -20,11 +20,10 @@ The repository includes:
 
 * ([model.py](mrcnn/model.py), [utils.py](mrcnn/utils.py), [config.py](mrcnn/config.py)): These files contain the main Mask RCNN implementation. 
 
-
 * [inspect_potato_data.ipynb](samples/potato/inspect_potato_data.ipynb). This notebook visualizes the different pre-processing steps
 to prepare the training data.
 
-* [inspect_potato_model.ipynb](samples/potato/inspect_potato_model.ipynb) This notebook goes in depth into the steps performed to detect and segment objects. It provides visualizations of every step of the pipeline. #TODO
+* [inspect_potato_model.ipynb](samples/potato/inspect_potato_model.ipynb) This notebook goes in depth into the steps performed to detect and segment objects. It provides visualizations of every step of the pipeline. 
 
 * [inspect_potato_weights.ipynb](samples/potato/inspect_potato_weights.ipynb)
 This notebooks inspects the weights of a trained model and looks for anomalies and odd patterns.#TODO
