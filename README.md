@@ -16,14 +16,14 @@ The repository includes:
 # Getting Started
 
 
-* [train_potato.ipynb](samples/potato/retrain_potato_model.ipynb) shows how to train Mask R-CNN on your own dataset. This notebook introduces a toy dataset (Shapes) to demonstrate training on a new dataset.
+* [retrain_potato_model.ipynb](samples/potato/retrain_potato_model.ipynb) shows how to train Mask R-CNN on your own dataset. This notebook introduces a toy dataset (Shapes) to demonstrate training on a new dataset.
 
 * ([model.py](mrcnn/model.py), [utils.py](mrcnn/utils.py), [config.py](mrcnn/config.py)): These files contain the main Mask RCNN implementation. 
 
 * [inspect_potato_data.ipynb](samples/potato/inspect_potato_data.ipynb). This notebook visualizes the different pre-processing steps
 to prepare the training data.
 
-* [inspect_potato_model.ipynb](samples/potato/inspect_potato-model.ipynb) This notebook goes in depth into the steps performed to detect and segment objects. It provides visualizations of every step of the pipeline. 
+* [inspect_potato-model.ipynb](samples/potato/inspect_potato-model.ipynb) This notebook goes in depth into the steps performed to detect and segment objects. It provides visualizations of every step of the pipeline. 
 
 * [inspect_potato_weights.ipynb](samples/potato/inspect_potato_weights.ipynb)
 This notebooks inspects the weights of a trained model and looks for anomalies and odd patterns.#TODO
@@ -31,7 +31,7 @@ This notebooks inspects the weights of a trained model and looks for anomalies a
 
 # Step by Step Detection
 To help with debugging and understanding the model, there are 3 notebooks 
-([inspect_potato_data.ipynb](samples/potato/inspect_potato_data.ipynb), [inspect_potato_model.ipynb](samples/potato/inspect_potato_model.ipynb),
+([inspect_potato_data.ipynb](samples/potato/inspect_potato_data.ipynb), [inspect_potato-model.ipynb](samples/potato/inspect_potato-model.ipynb),
 [inspect_potato_weights.ipynb](samples/potato/inspect_potato_weights.ipynb)) that provide a lot of visualizations and allow running the model step by step to inspect the output at each point. Here are a few examples:
 
 
