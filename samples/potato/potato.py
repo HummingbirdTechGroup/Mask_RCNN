@@ -14,19 +14,26 @@ Usage: import the module (see Jupyter notebooks for examples), or run from
        the command line as such:
 
     # Train a new model starting from pre-trained COCO weights
-    python3 potato.py train --dataset=/path/to/potato/dataset --weights=coco
-
-    # Resume training a model that you had trained earlier
-    python3 potato.py train --dataset=/path/to/potato/dataset --weights=last
+    python samples/potato/potato.py train --dataset=/path/to/potato/  --model=coco --config_file=/path/to/config/file
 
     # Train a new model starting from ImageNet weights
-    python3 potato.py train --dataset=/path/to/potato/dataset --weights=imagenet
+    python samples/potato/potato.py train --dataset=/path/to/potato/ --model=imagenet --config_file=/path/to/config/file
+
+    # Continue training a model that you had trained earlier
+    python samples/potato/potato.py train --dataset=/path/to/potato/  --model=/path/to/weights.h5 --config_file=/path/to/config/file
+
+    # Continue training the last model you trained. This will find
+    # the last trained weights in the model directory.
+    python samples/potato/potato.py train --dataset=/path/to/potato/  --model=last --config_file=/path/to/config/file
+
+
+    # Run POTATO evaluation on the last trained model
+    python samples/potato/potato.py evaluate --dataset=/path/to/potato/ --model=last --config_file=/path/to/config/file
 
     # Apply color splash to an image
-    python3 potato.py splash --weights=/path/to/weights/file.h5 --image=<URL or path to file>
+    python potato.py splash --weights=/path/to/weights/file.h5 --image=<URL or path to file>
 
-    # Apply color splash to video using the last weights you trained
-    python3 potato.py splash --weights=last --video=<URL or path to file>
+
 """
 
 import os
@@ -35,7 +42,7 @@ import json
 import datetime
 import numpy as np
 import skimage.draw
-
+import tensorflow as tf
 from hummingbirdtech.dic.container import Container
 
 # Root directory of the project
@@ -51,32 +58,91 @@ COCO_WEIGHTS_PATH = os.path.join(ROOT_DIR, "model_weights/mask_rcnn_coco.h5")
 
 # Directory to save logs and model checkpoints, if not provided
 # through the command line argument --logs
-DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
+DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs/")
 
 ############################################################
 #  Configurations
 ############################################################
 
+image_converter = Container().get('hummingbird.image_converter')
 
 class PotatoConfig(Config):
-    """Configuration for training on the toy  dataset.
+    """Configuration for training on the potato  dataset.
+    # TODO : add our final configuration
     Derives from the base Config class and overrides some values.
     """
-    # Give the configuration a recognizable name
     NAME = "potato"
 
-    # We use a GPU with 4GB memory
-    # Adjust down if you use a smaller GPU.
-    IMAGES_PER_GPU = 1
+    # Train on 1 GPU and 4 images per GPU. We can put multiple images on each
+    # GPU because the images are small. Batch size  GPUs * images/GPU.
+    GPU_COUNT = 1
+    IMAGES_PER_GPU = 3
 
     # Number of classes (including background)
-    NUM_CLASSES = 1 + 1  # Background + potato
+    NUM_CLASSES = 1 + 1  # background + potato class
 
-    # Number of training steps per epoch
-    STEPS_PER_EPOCH = 100
+    # Use small images for faster training. Set the limits of the small side
+    # the large side, and that determines the image shape.
+    IMAGE_MIN_DIM = 256
+    IMAGE_MAX_DIM = 256
+    BACKBONE_STRIDES = [4, 8, 16, 32, 64]
 
-    # Skip detections with < 90% confidence
+    ##********** 1)ANCHORS GENERATION - for RPN*********
+
+    #     Length of square anchor side in pixels
+    RPN_ANCHOR_SCALES = (8, 16, 24, 32, 48)
+    TOP_DOWN_PYRAMID_SIZE = 256
+
+    ##********** 2)PROPOSAL LAYER ********* (no deep learning involved here)
+
+    # How many anchors per image to use for RPN training
+    RPN_TRAIN_ANCHORS_PER_IMAGE = 128  ##in dataset generation
+
+    ## tf.image.non_max_suppression(boxes,scores,max_output_size,iou_threshold=0.5,...)
+    # Non-max suppression threshold to filter RPN proposals.
+    # You can increase this during training to generate more propsals.
+    RPN_NMS_THRESHOLD = 0.7
+    # A float representing the threshold for deciding whether boxes overlap too much with respect to IOU.
+    ## POST_NMS_ROIS_TRAINING~ POST_NMS_ROIS_INFERENCE ~proposal_count ~ max_output_size
+
+    POST_NMS_ROIS_TRAINING = 1500
+    POST_NMS_ROIS_INFERENCE = 800
+    ##********** 3a)TRAINING - DETECTION TARGET LAYER *********
+
+    # Maximum number of ground truth instances to use in one image
+    MAX_GT_INSTANCES = 128
+
+    # Reduce training ROIs per image because the images are small and have
+    # few objects. Aim to allow ROI sampling to pick 33% positive ROIs.
+    # Number of ROIs per image to feed to classifier/mask heads
+    # The Mask RCNN paper uses 512 but often the RPN doesn't generate
+    # enough positive proposals to fill this and keep a positive:negative
+    # ratio of 1:3. You can increase the number of proposals by adjusting
+    # the RPN NMS threshold.
+    TRAIN_ROIS_PER_IMAGE = 128
+    # Percent of positive ROIs used to train classifier/mask heads
+    ROI_POSITIVE_RATIO = 0.33
+
+    ##********** 3B)INFERENCE - DETECTION  LAYER *********
+
+    # Non-maximum suppression threshold for detection in DetectionLater
+    DETECTION_NMS_THRESHOLD = 0.33  # 0.5 above iou_threshold
+
+    # Minimum probability value to accept a detected instance
+    # ROIs below this threshold are skipped in DetectionLater
     DETECTION_MIN_CONFIDENCE = 0.9
+
+    # Max number of final detections
+    DETECTION_MAX_INSTANCES = 80
+
+    # Use a small epoch since the data is simple
+    STEPS_PER_EPOCH = 40
+
+    # use small validation steps since the epoch is small
+    VALIDATION_STEPS = 6
+    LEARNING_RATE = 0.001
+
+    TRAIN_BN = True
 
 
 ############################################################
@@ -93,7 +159,6 @@ class PotatoDataset(utils.Dataset):
         
         # Add classes. We have only one class to add.
         self.add_class("potato", 1, "potato")
-        self.image_converter = Container().get('hummingbird.image_converter')
         # Train or validation dataset?
         assert subset in ["train", "val"]
         
@@ -190,8 +255,8 @@ class PotatoDataset(utils.Dataset):
         """
         # Load image
         path_image = self.image_info[image_id]['path']
-        hummingbird_image =self.image_converter.read_image_from_path(path=path_image)
-        image = self.compute_image_array_from_hummingbird_image(hummingbird_image)
+        hummingbird_image = image_converter.read_image_from_path(path=path_image)
+        image = compute_image_array_from_hummingbird_image(hummingbird_image)
         # If grayscale. Convert to RGB for consistency.
         if image.ndim != 3:
             image = skimage.color.gray2rgb(image)
@@ -205,29 +270,29 @@ class PotatoDataset(utils.Dataset):
         """
         # Load mask image
         path_mask = self.image_info[image_id]['path_vegetation_mask']
-        hummingbird_mask_image = self.image_converter.read_image_from_path(path=path_mask)
+        hummingbird_mask_image = image_converter.read_image_from_path(path=path_mask)
         mask_array = hummingbird_mask_image.bands[0].to_ndarray()
         mask_array = np.where(mask_array==255,1,0)
         return mask_array
         
         
-    def compute_image_array_from_hummingbird_image(self, hummingbird_image):
-        """ Compute array from hummingbird image
-        """
-        alpha = []
-           
-        if len(hummingbird_image.bands) == 3:
-                data_type = hummingbird_image.bands[0].data_type
-                if data_type == np.dtype('uint8') or data_type == np.dtype('uint16'):
-                    no_data_value = hummingbird_image.bands[0].no_data_value
-                    max_value = np.iinfo(data_type).max
-                    alpha.append(hummingbird_image.bands[0].transform(
-                        lambda x: np.where(x == no_data_value, 0, max_value)).as_type(data_type))
-                    
-        return np.stack(hummingbird_image.bands + alpha, axis=2)
+def compute_image_array_from_hummingbird_image(hummingbird_image):
+    """ Compute array from hummingbird image
+    """
+    alpha = []
+
+    if len(hummingbird_image.bands) == 3:
+            data_type = hummingbird_image.bands[0].data_type
+            if data_type == np.dtype('uint8') or data_type == np.dtype('uint16'):
+                no_data_value = hummingbird_image.bands[0].no_data_value
+                max_value = np.iinfo(data_type).max
+                alpha.append(hummingbird_image.bands[0].transform(
+                    lambda x: np.where(x == no_data_value, 0, max_value)).as_type(data_type))
+
+    return np.stack(hummingbird_image.bands + alpha, axis=2)
 
 
-def train(model):
+def train(model, config, augmentation = False, epochs = 30):
     """Train the model."""
     # Training dataset.
     dataset_train = PotatoDataset()
@@ -244,10 +309,50 @@ def train(model):
     # COCO trained weights, we don't need to train too long. Also,
     # no need to train all layers, just the heads should do it.
     print("Training network heads")
+    if augmentation:
+        import imgaug
+
+        augmentation_operations = imgaug.augmenters.Sometimes(0.5, [
+            imgaug.augmenters.Fliplr(0.5),
+            imgaug.augmenters.Rot90(1),
+            imgaug.augmenters.GaussianBlur(sigma=(0.0, 5.0))
+        ])
+
+    else:
+        augmentation_operations = None
+    print('Model trained for {} epochs with augmentation: {}'.format(epochs, augmentation))
     model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE,
-                epochs=30,
+                augmentation = augmentation_operations,
+                epochs= epochs,
                 layers='heads')
+
+
+def evaluate(model, config):
+    " Evaluate the model"
+    # Validation dataset
+    dataset_val = PotatoDataset()
+    dataset_val.load_potato(args.dataset, "val")
+    dataset_val.prepare()
+
+    image_ids = dataset_val.image_ids
+    APs = []
+    for image_id in image_ids:
+        # Load image and ground truth data
+        image, image_meta, gt_class_id, gt_bbox, gt_mask = \
+            modellib.load_image_gt(dataset_val, config,
+                                   image_id, use_mini_mask=False)
+        molded_images = np.expand_dims(modellib.mold_image(image, config), 0)
+        # Run object detection
+        results = model.detect([image], verbose=0)
+        r = results[0]
+        # Compute AP
+        AP, precisions, recalls, overlaps = \
+            utils.compute_ap(gt_bbox, gt_class_id, gt_mask,
+                             r["rois"], r["class_ids"], r["scores"], r['masks'])
+        APs.append(AP)
+
+    print("mAP on the validation set: ", np.mean(APs))
 
 
 def color_splash(image, mask):
@@ -270,55 +375,24 @@ def color_splash(image, mask):
     return splash
 
 
-def detect_and_color_splash(model, image_path=None, video_path=None):
-    assert image_path or video_path
+def detect_and_color_splash(model, image_path=None):
 
-    # Image or video?
-    if image_path:
-        # Run model detection and generate the color splash effect
-        print("Running on {}".format(args.image))
-        # Read image
-        image = skimage.io.imread(args.image)
-        # Detect objects
-        r = model.detect([image], verbose=1)[0]
-        # Color splash
-        splash = color_splash(image, r['masks'])
-        # Save output
-        file_name = "splash_{:%Y%m%dT%H%M%S}.png".format(datetime.datetime.now())
-        skimage.io.imsave(file_name, splash)
-    elif video_path:
-        import cv2
-        # Video capture
-        vcapture = cv2.VideoCapture(video_path)
-        width = int(vcapture.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(vcapture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        fps = vcapture.get(cv2.CAP_PROP_FPS)
+    # Run model detection and generate the color splash effect
+    print("Running on {}".format(image_path))
+    # Read image
+    hummingbird_image = image_converter.read_image_from_path(path=image_path)
+    image = compute_image_array_from_hummingbird_image(hummingbird_image)
+    if image.shape[-1] == 4:
+        image = image[..., :3]
 
-        # Define codec and create video writer
-        file_name = "splash_{:%Y%m%dT%H%M%S}.avi".format(datetime.datetime.now())
-        vwriter = cv2.VideoWriter(file_name,
-                                  cv2.VideoWriter_fourcc(*'MJPG'),
-                                  fps, (width, height))
+    # Detect objects
+    r = model.detect([image], verbose=1)[0]
+    # Color splash
+    splash = color_splash(image, r['masks'])
+    # Save output
+    file_name = "splash_{:%Y%m%dT%H%M%S}.png".format(datetime.datetime.now())
+    skimage.io.imsave(file_name, splash)
 
-        count = 0
-        success = True
-        while success:
-            print("frame: ", count)
-            # Read next image
-            success, image = vcapture.read()
-            if success:
-                # OpenCV returns images as BGR, convert to RGB
-                image = image[..., ::-1]
-                # Detect objects
-                r = model.detect([image], verbose=0)[0]
-                # Color splash
-                splash = color_splash(image, r['masks'])
-                # RGB -> BGR to save image to video
-                splash = splash[..., ::-1]
-                # Add image to video writer
-                vwriter.write(splash)
-                count += 1
-        vwriter.release()
     print("Saved to ", file_name)
 
 
@@ -335,6 +409,12 @@ if __name__ == '__main__':
     parser.add_argument("command",
                         metavar="<command>",
                         help="'train' or 'splash'")
+    parser.add_argument('--augmentation',
+                        required= False)
+    parser.add_argument('--epochs',
+                        type = int,
+                        help = " number of epochs to train the model",
+                        required=False)
     parser.add_argument('--dataset', required=False,
                         metavar="/path/to/potato/dataset/",
                         help='Directory of the Potato dataset')
@@ -345,29 +425,36 @@ if __name__ == '__main__':
                         default=DEFAULT_LOGS_DIR,
                         metavar="/path/to/logs/",
                         help='Logs and checkpoints directory (default=logs/)')
+    parser.add_argument('--config_file', required=False,
+                        metavar="/path/to/config_file/",
+                        help='Directory of the Config file')
     parser.add_argument('--image', required=False,
                         metavar="path or URL to image",
                         help='Image to apply the color splash effect on')
-    parser.add_argument('--video', required=False,
-                        metavar="path or URL to video",
-                        help='Video to apply the color splash effect on')
+
     args = parser.parse_args()
 
     # Validate arguments
-    if args.command == "train":
+    if args.command == "train" or args.command == "evaluate":
         assert args.dataset, "Argument --dataset is required for training"
     elif args.command == "splash":
-        assert args.image or args.video,\
-               "Provide --image or --video to apply color splash"
+        assert args.image,\
+               "Provide --image to apply color splash"
+
 
     print("Weights: ", args.weights)
     print("Dataset: ", args.dataset)
     print("Logs: ", args.logs)
+    print("Config file: ", args.config_file)
 
     # Configurations
-    if args.command == "train":
+    if args.config_file:
+        sys.path.append(args.config_file.split('config.py')[0])
+        from config import PotatoConfig
         config = PotatoConfig()
     else:
+        config = PotatoConfig()
+    if args.command == 'splash' or args.command == 'evaluate':
         class InferenceConfig(PotatoConfig):
             # Set batch size to 1 since we'll be running inference on
             # one image at a time. Batch size = GPU_COUNT * IMAGES_PER_GPU
@@ -378,11 +465,15 @@ if __name__ == '__main__':
 
     # Create model
     if args.command == "train":
-        model = modellib.MaskRCNN(mode="training", config=config,
-                                  model_dir=args.logs)
+        DEVICE = "/cpu:0"
+        with tf.device(DEVICE):
+            model = modellib.MaskRCNN(mode="training", config=config,
+                                      model_dir=args.logs)
     else:
-        model = modellib.MaskRCNN(mode="inference", config=config,
-                                  model_dir=args.logs)
+        DEVICE = "/cpu:0"
+        with tf.device(DEVICE):
+            model = modellib.MaskRCNN(mode="inference", config=config,
+                                      model_dir=args.logs)
 
     # Select weights file to load
     if args.weights.lower() == "coco":
@@ -410,12 +501,22 @@ if __name__ == '__main__':
     else:
         model.load_weights(weights_path, by_name=True)
 
+    if args.augmentation:
+        augmentation = True
+    else:
+        augmentation = False
+    if args.epochs:
+        epochs = args.epochs
+    else:
+        epochs = 30
+
     # Train or evaluate
     if args.command == "train":
-        train(model)
+        train(model, config, augmentation, epochs)
+    elif args.command == "evaluate":
+        evaluate(model, config)
     elif args.command == "splash":
-        detect_and_color_splash(model, image_path=args.image,
-                                video_path=args.video)
+        detect_and_color_splash(model, image_path=args.image)
     else:
         print("'{}' is not recognized. "
               "Use 'train' or 'splash'".format(args.command))

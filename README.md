@@ -20,7 +20,6 @@ The repository includes:
 [Dataset preparation](https://hummingbirdtech.atlassian.net/wiki/spaces/HT/pages/600604673/2.+Mask+R-CNN+-+DataSet+Preparation)
 
 
-
 # Getting Started
 
 
@@ -40,38 +39,55 @@ This notebooks inspects the weights of a trained model and looks for anomalies a
 # Step by Step Detection
 To help with debugging and understanding the model, there are 3 notebooks 
 ([inspect_potato_data.ipynb](samples/potato/inspect_potato_data.ipynb), [inspect_potato-model.ipynb](samples/potato/inspect_potato-model.ipynb),
-[inspect_potato_weights.ipynb](samples/potato/inspect_potato_weights.ipynb)) that provide a lot of visualizations and allow running the model step by step to inspect the output at each point. Here are a few examples:
-
+[inspect_potato_weights.ipynb](samples/potato/inspect_potato_weights.ipynb)) that provide a lot of visualizations and allow running the model step by step to inspect the output at each point.
 
 # Training on potato dataset
 
 
 We're providing pre-trained weights for MS COCO to make it easier to start. You can use those weights as a starting point to train your own variation on the network. Training and evaluation code is in samples/potato/potato.py. You can import this module in Jupyter notebook (see the provided notebooks for examples) or you can run it directly from the command line as such:
 
-TODO: implement this code
 ```
 # Train a new model starting from pre-trained COCO weights
-python samples/potato/potato.py train --dataset=/path/to/coco/ --model=coco
+python samples/potato/potato.py train --dataset=/path/to/potato/  --model=coco --config_file=/path/to/config/file 
 
 # Train a new model starting from ImageNet weights
-python samples/potato/potato.py train --dataset=/path/to/coco/ --model=imagenet
+python samples/potato/potato.py train --dataset=/path/to/potato/ --model=imagenet --config_file=/path/to/config/file
 
 # Continue training a model that you had trained earlier
-python samples/potato/potato.py train --dataset=/path/to/coco/ --model=/path/to/weights.h5
+python samples/potato/potato.py train --dataset=/path/to/potato/  --model=/path/to/weights.h5 --config_file=/path/to/config/file
 
 # Continue training the last model you trained. This will find
 # the last trained weights in the model directory.
-python samples/potato/potato.py train --dataset=/path/to/coco/ --model=last
+python samples/potato/potato.py train --dataset=/path/to/potato/  --model=last --config_file=/path/to/config/file
 ```
-
 You can also run the POTATO evaluation code with:
-```
+```python
 # Run POTATO evaluation on the last trained model
-python samples/potato/potato.py evaluate --dataset=/path/to/coco/ --model=last
+python samples/potato/potato.py evaluate --dataset=/path/to/potato/ --model=last --config_file=/path/to/config/file
 ```
 
-The training schedule, learning rate, and other parameters should be set in `samples/potato/potato.py`.
+The training schedule, learning rate, and other parameters should be set in `samples/potato/potato.py` or equivalently in a config file located in`path/to/config_file/config.py` and indicated in the arguments of the command line `--config_file`. The structure of the config file should follow:
 
+```python
+import sys
+import os
+
+# Root directory of the project
+ROOT_DIR = os.path.abspath("../../")
+
+# Import Mask RCNN
+sys.path.append(ROOT_DIR)  # To find local version of the library
+
+from mrcnn.config import Config
+
+class PotatoConfig(Config):
+    # Configuration parameters
+    
+    
+
+```
+
+Two possible arguments can be added: `--augmentation` which sets on the data augmentation during training and `--epochs=30` for instance, which defines the number of epochs on which to train the model.
 
 # Training any other Dataset
  
@@ -184,7 +200,7 @@ The final model gave Mean AP the test set of 70 images: 0.3653.
 *Re-training: Validation Loss*
 ![First_training_val_loss_18032019](assets/val_loss_retrain.png)
 
-Hyper parameters (found in `current_best_model_config_18_03_2019.txt`) are as following and have been retrieved by a deep understanding on how works Mask R-CNN (documentation to be written #TODO)
+Hyper parameters (found in `current_best_model_config_18_03_2019.txt`) are as following and have been retrieved by a deep understanding on how works Mask R-CNN.
  
 ```python
 NAME = "potato"
