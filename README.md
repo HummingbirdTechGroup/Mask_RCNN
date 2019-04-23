@@ -13,10 +13,18 @@ The repository includes:
 * Evaluation on MS COCO metrics (AP)
 * Example of training on your own dataset
 
+# Documentation access
+
+[Principle of the Mask R CNN algorithm](https://hummingbirdtech.atlassian.net/wiki/spaces/HT/pages/597295668/1.+Mask+R-CNN+-+Paper+description+and+adaptation)
+[Videos tutorials of understanding the parameters configuration for Mask R-CNN](https://drive.google.com/drive/folders/1OZhSTLq3Hc_HGYnGvoy4KHk59eB-X0C7)
+[Dataset preparation](https://hummingbirdtech.atlassian.net/wiki/spaces/HT/pages/600604673/2.+Mask+R-CNN+-+DataSet+Preparation)
+
+
+
 # Getting Started
 
 
-* [retrain_potato_model.ipynb](samples/potato/retrain_potato_model.ipynb) shows how to train Mask R-CNN on your own dataset. This notebook introduces a toy dataset (Shapes) to demonstrate training on a new dataset.
+* [retrain_potato_model.ipynb](samples/potato/retrain_potato_model.ipynb) shows how to train Mask R-CNN on our own potato dataset.
 
 * ([model.py](mrcnn/model.py), [utils.py](mrcnn/utils.py), [config.py](mrcnn/config.py)): These files contain the main Mask RCNN implementation. 
 
@@ -188,7 +196,7 @@ IMAGES_PER_GPU = 8
 
 
  # Number of classes (including background)
-NUM_CLASSES = 1 + 1  # background + 3 shapes
+NUM_CLASSES = 1 + 1  # background + potato
 
 
 # Use small images for faster training. Set the limits of the small side
