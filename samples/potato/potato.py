@@ -322,8 +322,8 @@ def train(model, config, augmentation = False, epochs = 30):
 
         augmentation_operations = imgaug.augmenters.Sometimes(0.5, [
             imgaug.augmenters.Fliplr(0.5),
-            imgaug.augmenters.Rot90(1),
-            imgaug.augmenters.GaussianBlur(sigma=(0.0, 5.0))
+            imgaug.augmenters.Rot90(1)#,
+            # imgaug.augmenters.GaussianBlur(sigma=(0.0, 5.0))
         ])
 
     else:
