@@ -252,13 +252,11 @@ class PotatoDataset(utils.Dataset):
             return info["path"]
         else:
             super(self.__class__, self).image_reference(image_id)
-            
+
     def load_image(self, image_id):
         """Load the specified image and return a [H,W,3] Numpy array.
         """
-        # Load image
-        path_image = self.image_info[image_id]['path']
-        hummingbird_image = image_converter.read_image_from_path(path=path_image)
+        hummingbird_image = self.load_hummingbird_image(image_id)
         image = compute_image_array_from_hummingbird_image(hummingbird_image)
         # If grayscale. Convert to RGB for consistency.
         if image.ndim != 3:
@@ -267,7 +265,14 @@ class PotatoDataset(utils.Dataset):
         if image.shape[-1] == 4:
             image = image[..., :3]
         return image
-    
+
+    def load_hummingbird_image(self, image_id):
+        """Load the specified image and return a [H,W,3] Numpy array.
+        """
+        # Load image
+        path_image = self.image_info[image_id]['path']
+        return image_converter.read_image_from_path(path=path_image)
+
     def load_vegetation_mask_image(self,image_id):
         """Load the specified mask image and return a [H,W] numpy array
         """
@@ -277,8 +282,8 @@ class PotatoDataset(utils.Dataset):
         mask_array = hummingbird_mask_image.bands[0].to_ndarray()
         mask_array = np.where(mask_array==255,1,0)
         return mask_array
-        
-        
+
+
 def compute_image_array_from_hummingbird_image(hummingbird_image):
     """ Compute array from hummingbird image
     """
