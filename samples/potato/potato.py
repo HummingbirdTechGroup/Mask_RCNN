@@ -14,21 +14,21 @@ Usage: import the module (see Jupyter notebooks for examples), or run from
        the command line as such:
 
     # Train a new model starting from pre-trained COCO weights
-    python samples/potato/potato.py train --dataset=/path/to/potato/  --model=coco --config_file=/path/to/config/file
+    python samples/potato/potato.py train --dataset=/path/to/potato/  --weights=coco --config_file=/path/to/config/file
 
     # Train a new model starting from ImageNet weights
-    python samples/potato/potato.py train --dataset=/path/to/potato/ --model=imagenet --config_file=/path/to/config/file
+    python samples/potato/potato.py train --dataset=/path/to/potato/ --weights=imagenet --config_file=/path/to/config/file
 
     # Continue training a model that you had trained earlier
-    python samples/potato/potato.py train --dataset=/path/to/potato/  --model=/path/to/weights.h5 --config_file=/path/to/config/file
+    python samples/potato/potato.py train --dataset=/path/to/potato/  --weights=/path/to/weights.h5 --config_file=/path/to/config/file
 
     # Continue training the last model you trained. This will find
     # the last trained weights in the model directory.
-    python samples/potato/potato.py train --dataset=/path/to/potato/  --model=last --config_file=/path/to/config/file
+    python samples/potato/potato.py train --dataset=/path/to/potato/  --weights=last --config_file=/path/to/config/file
 
 
     # Run POTATO evaluation on the last trained model
-    python samples/potato/potato.py evaluate --dataset=/path/to/potato/ --model=last --config_file=/path/to/config/file
+    python samples/potato/potato.py evaluate --dataset=/path/to/potato/ --weights=last --config_file=/path/to/config/file
 
     # Apply color splash to an image
     python potato.py splash --weights=/path/to/weights/file.h5 --image=<URL or path to file>
@@ -59,7 +59,6 @@ COCO_WEIGHTS_PATH = os.path.join(ROOT_DIR, "model_weights/mask_rcnn_coco.h5")
 # Directory to save logs and model checkpoints, if not provided
 # through the command line argument --logs
 DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs/")
-
 ############################################################
 #  Configurations
 ############################################################
@@ -73,42 +72,44 @@ class PotatoConfig(Config):
     """
     NAME = "potato"
 
-    # Train on 1 GPU and 4 images per GPU. We can put multiple images on each
-    # GPU because the images are small. Batch size  GPUs * images/GPU.
+    # Train on 1 GPU and 8 images per GPU. We can put multiple images on each
+    # GPU because the images are small. Batch size is 8 (GPUs * images/GPU).
     GPU_COUNT = 1
     IMAGES_PER_GPU = 3
-
-    # Number of classes (including background)
-    NUM_CLASSES = 1 + 1  # background + potato class
-
+    
+    
+     # Number of classes (including background)
+    NUM_CLASSES = 1 + 1  # background + 3 shapes
+    
+    
     # Use small images for faster training. Set the limits of the small side
     # the large side, and that determines the image shape.
     IMAGE_MIN_DIM = 256
     IMAGE_MAX_DIM = 256
-    BACKBONE_STRIDES = [4, 8, 16, 32, 64]
-
+    BACKBONE_STRIDES = [4,8,16,32,64]
+    
     ##********** 1)ANCHORS GENERATION - for RPN*********
-
+    
     #     Length of square anchor side in pixels
-    RPN_ANCHOR_SCALES = (8, 16, 24, 32, 48)
+    RPN_ANCHOR_SCALES = (8, 16, 24,32, 48) 
     TOP_DOWN_PYRAMID_SIZE = 256
-
+    
     ##********** 2)PROPOSAL LAYER ********* (no deep learning involved here)
-
-    # How many anchors per image to use for RPN training
-    RPN_TRAIN_ANCHORS_PER_IMAGE = 128  ##in dataset generation
+    
+     # How many anchors per image to use for RPN training
+    RPN_TRAIN_ANCHORS_PER_IMAGE = 128 ##in dataset generation
 
     ## tf.image.non_max_suppression(boxes,scores,max_output_size,iou_threshold=0.5,...)
     # Non-max suppression threshold to filter RPN proposals.
     # You can increase this during training to generate more propsals.
-    RPN_NMS_THRESHOLD = 0.7
-    # A float representing the threshold for deciding whether boxes overlap too much with respect to IOU.
+    RPN_NMS_THRESHOLD=0.7
+    #A float representing the threshold for deciding whether boxes overlap too much with respect to IOU.    
     ## POST_NMS_ROIS_TRAINING~ POST_NMS_ROIS_INFERENCE ~proposal_count ~ max_output_size
-
-    POST_NMS_ROIS_TRAINING = 1500
-    POST_NMS_ROIS_INFERENCE = 800
+    
+    POST_NMS_ROIS_TRAINING=1500
+    POST_NMS_ROIS_INFERENCE=800
     ##********** 3a)TRAINING - DETECTION TARGET LAYER *********
-
+    
     # Maximum number of ground truth instances to use in one image
     MAX_GT_INSTANCES = 128
 
@@ -122,18 +123,19 @@ class PotatoConfig(Config):
     TRAIN_ROIS_PER_IMAGE = 128
     # Percent of positive ROIs used to train classifier/mask heads
     ROI_POSITIVE_RATIO = 0.33
-
+    
     ##********** 3B)INFERENCE - DETECTION  LAYER *********
 
+    
     # Non-maximum suppression threshold for detection in DetectionLater
-    DETECTION_NMS_THRESHOLD = 0.33  # 0.5 above iou_threshold
+    DETECTION_NMS_THRESHOLD = 0.5  # 0.5 above iou_threshold
 
     # Minimum probability value to accept a detected instance
     # ROIs below this threshold are skipped in DetectionLater
-    DETECTION_MIN_CONFIDENCE = 0.9
+    DETECTION_MIN_CONFIDENCE = 0.7
 
     # Max number of final detections
-    DETECTION_MAX_INSTANCES = 80
+    DETECTION_MAX_INSTANCES = 120
 
     # Use a small epoch since the data is simple
     STEPS_PER_EPOCH = 40
@@ -142,7 +144,8 @@ class PotatoConfig(Config):
     VALIDATION_STEPS = 6
     LEARNING_RATE = 0.001
 
-    TRAIN_BN = True
+    TRAIN_BN = False
+
 
 
 ############################################################
