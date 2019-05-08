@@ -473,7 +473,7 @@ if __name__ == '__main__':
 
     # Create model
     if args.command == "train":
-        DEVICE = "/cpu:0"
+        DEVICE = "/gpu:0"
         with tf.device(DEVICE):
             model = modellib.MaskRCNN(mode="training", config=config,
                                       model_dir=args.logs)
