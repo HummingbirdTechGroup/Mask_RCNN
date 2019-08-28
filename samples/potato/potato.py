@@ -163,7 +163,7 @@ class PotatoDataset(utils.Dataset):
         # Add classes. We have only one class to add.
         self.add_class("potato", 1, "potato")
         # Train or validation dataset?
-        assert subset in ["train", "val"]
+        assert subset in ["train", "val","test"]
         
 
         # Load annotations

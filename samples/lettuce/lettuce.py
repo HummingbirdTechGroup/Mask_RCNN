@@ -164,7 +164,7 @@ class LettuceDataset(utils.Dataset):
         # Add classes. We have only one class to add.
         self.add_class("lettuce", 1, "lettuce")
         # Train or validation dataset?
-        assert subset in ["train", "val"]
+        assert subset in ["train", "val","test"]
         
 
         # Load annotations
