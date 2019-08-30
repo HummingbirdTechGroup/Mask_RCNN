@@ -98,7 +98,7 @@ class LettuceConfig(Config):
     ##********** 2)PROPOSAL LAYER ********* (no deep learning involved here)
     
      # How many anchors per image to use for RPN training
-    RPN_TRAIN_ANCHORS_PER_IMAGE = 1024#128 ##in dataset generation
+    RPN_TRAIN_ANCHORS_PER_IMAGE = 300 ##in dataset generation
 
     ## tf.image.non_max_suppression(boxes,scores,max_output_size,iou_threshold=0.5,...)
     # Non-max suppression threshold to filter RPN proposals.
@@ -107,13 +107,14 @@ class LettuceConfig(Config):
     #A float representing the threshold for deciding whether boxes overlap too much with respect to IOU.    
     ## POST_NMS_ROIS_TRAINING~ POST_NMS_ROIS_INFERENCE ~proposal_count ~ max_output_size
     
-    POST_NMS_ROIS_TRAINING=1500
-    POST_NMS_ROIS_INFERENCE=800
+    POST_NMS_ROIS_TRAINING=1800
+    POST_NMS_ROIS_INFERENCE=1100
     ##********** 3a)TRAINING - DETECTION TARGET LAYER *********
     
     # Maximum number of ground truth instances to use in one image
-    MAX_GT_INSTANCES = 128
-
+    MAX_GT_INSTANCES = 300
+    
+    
     # Reduce training ROIs per image because the images are small and have
     # few objects. Aim to allow ROI sampling to pick 33% positive ROIs.
     # Number of ROIs per image to feed to classifier/mask heads
@@ -121,7 +122,7 @@ class LettuceConfig(Config):
     # enough positive proposals to fill this and keep a positive:negative
     # ratio of 1:3. You can increase the number of proposals by adjusting
     # the RPN NMS threshold.
-    TRAIN_ROIS_PER_IMAGE = 128
+    TRAIN_ROIS_PER_IMAGE = 300
     # Percent of positive ROIs used to train classifier/mask heads
     ROI_POSITIVE_RATIO = 0.33
     
@@ -133,16 +134,16 @@ class LettuceConfig(Config):
 
     # Minimum probability value to accept a detected instance
     # ROIs below this threshold are skipped in DetectionLater
-    DETECTION_MIN_CONFIDENCE = 0.7#0.7
+    DETECTION_MIN_CONFIDENCE = 0.7
 
     # Max number of final detections
-    DETECTION_MAX_INSTANCES = 120
+    DETECTION_MAX_INSTANCES = 300
 
     # Use a small epoch since the data is simple
-    STEPS_PER_EPOCH = 40
+    STEPS_PER_EPOCH = 130
 
     # use small validation steps since the epoch is small
-    VALIDATION_STEPS = 6
+    VALIDATION_STEPS = 40
     LEARNING_RATE = 0.001
 
     TRAIN_BN = False
