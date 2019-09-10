@@ -163,7 +163,7 @@ def display_instances(image, boxes, masks, class_ids, class_names,
         for verts in contours:
             # Subtract the padding and flip (y, x) to (x, y)
             verts = np.fliplr(verts) - 1
-            p = Polygon(verts, facecolor="none", edgecolor=color)
+            p = Polygon(verts, facecolor="none", edgecolor=color,linewidth=3)
             ax.add_patch(p)
     ax.imshow(masked_image.astype(np.uint8))
     if auto_show:
@@ -182,8 +182,8 @@ def display_differences(image,
         gt_box, gt_class_id, gt_mask,
         pred_box, pred_class_id, pred_score, pred_mask,
         iou_threshold=iou_threshold, score_threshold=score_threshold)
-    # Ground truth = blue. Predictions = red
-    colors = [(0, 0, 1, .8)] * len(gt_match)\
+    # Ground truth = yellow. Predictions = red
+    colors = [(1,1,0, 1)] * len(gt_match)\
            + [(1, 0, 0, 1)] * len(pred_match)
     # Concatenate GT and predictions
     class_ids = np.concatenate([gt_class_id, pred_class_id])
