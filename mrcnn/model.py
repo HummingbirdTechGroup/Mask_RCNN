@@ -877,7 +877,7 @@ def build_rpn_model(anchor_stride, anchors_per_location, depth):
     It wraps the RPN graph so it can be used multiple times with shared
     weights.
 
-    anchors_per_location: number of anchors per pixel in the feature map
+    anchors_per_location: number of anchors per pixel in the feature map (=len(anchor_ratios))
     anchor_stride: Controls the density of anchors. Typically 1 (anchors for
                    every pixel in the feature map), or 2 (every other pixel).
     depth: Depth of the backbone feature map.
@@ -1494,11 +1494,13 @@ def build_rpn_targets(image_shape, anchors, gt_class_ids, gt_boxes, config):
     # matched to them. Skip boxes in crowd areas.
     anchor_iou_argmax = np.argmax(overlaps, axis=1)
     anchor_iou_max = overlaps[np.arange(overlaps.shape[0]), anchor_iou_argmax]
+
     rpn_match[(anchor_iou_max < 0.3) & (no_crowd_bool)] = -1
     # 2. Set an anchor for each GT box (regardless of IoU value).
     # TODO: If multiple anchors have the same IoU match all of them
     gt_iou_argmax = np.argmax(overlaps, axis=0)
     rpn_match[gt_iou_argmax] = 1
+
     # 3. Set anchors with high overlap as positive.
     rpn_match[anchor_iou_max >= 0.7] = 1
 
@@ -1514,10 +1516,12 @@ def build_rpn_targets(image_shape, anchors, gt_class_ids, gt_boxes, config):
     ids = np.where(rpn_match == -1)[0]
     extra = len(ids) - (config.RPN_TRAIN_ANCHORS_PER_IMAGE -
                         np.sum(rpn_match == 1))
+
     if extra > 0:
         # Rest the extra ones to neutral
         ids = np.random.choice(ids, extra, replace=False)
         rpn_match[ids] = 0
+    
 
     # For positive anchors, compute shift and scale needed to transform them
     # to match the corresponding GT boxes.
@@ -2340,8 +2344,7 @@ class MaskRCNN():
         callbacks = [
             keras.callbacks.TensorBoard(log_dir=self.log_dir,
                                         histogram_freq=0, write_graph=True, write_images=False),
-            keras.callbacks.ModelCheckpoint(self.checkpoint_path,
-                                            verbose=0, save_weights_only=True),
+            keras.callbacks.ModelCheckpoint(self.checkpoint_path,save_best_only=True, monitor='val_loss',verbose=0, save_weights_only=True),
         ]
 
         # Add custom callbacks to the list

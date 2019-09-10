@@ -3,29 +3,34 @@
 This is an implementation of [Mask R-CNN](https://arxiv.org/abs/1703.06870) on Python 3, Keras, and TensorFlow. The model generates bounding boxes and segmentation masks for each instance of an object in the image. It's based on Feature Pyramid Network (FPN) and a ResNet101 backbone.
 
 This is an extension of the repository [matterpoort/Mask_RCNN](https://github.com/matterport/Mask_RCNN)
-![Instance Segmentation Sample](assets/potato_readme.png)
+![Instance Segmentation Sample](assets/potato_readme-2.png)
 
 The repository includes:
 * Source code of Mask R-CNN built on FPN and ResNet101.
 * Training code for MS COCO
 * Pre-trained weights for MS COCO
 * Jupyter notebooks to visualize the detection pipeline at every step
-* ParallelModel class for multi-GPU training
 * Evaluation on MS COCO metrics (AP)
 * Example of training on your own dataset
+
+# Documentation access
+
+[Principle of the Mask R CNN algorithm](https://hummingbirdtech.atlassian.net/wiki/spaces/HT/pages/597295668/1.+Mask+R-CNN+-+Paper+description+and+adaptation)
+[Videos tutorials of understanding the parameters configuration for Mask R-CNN](https://drive.google.com/drive/folders/1OZhSTLq3Hc_HGYnGvoy4KHk59eB-X0C7)
+[Dataset preparation](https://hummingbirdtech.atlassian.net/wiki/spaces/HT/pages/600604673/2.+Mask+R-CNN+-+DataSet+Preparation)
+
 
 # Getting Started
 
 
-* [train_potato.ipynb](samples/potato/retrain_potato.ipynb) shows how to train Mask R-CNN on your own dataset. This notebook introduces a toy dataset (Shapes) to demonstrate training on a new dataset.
+* [retrain_potato_model.ipynb](samples/potato/retrain_potato_model.ipynb) shows how to train Mask R-CNN on our own potato dataset.
 
 * ([model.py](mrcnn/model.py), [utils.py](mrcnn/utils.py), [config.py](mrcnn/config.py)): These files contain the main Mask RCNN implementation. 
-
 
 * [inspect_potato_data.ipynb](samples/potato/inspect_potato_data.ipynb). This notebook visualizes the different pre-processing steps
 to prepare the training data.
 
-* [inspect_potato_model.ipynb](samples/potato/inspect_potato_model.ipynb) This notebook goes in depth into the steps performed to detect and segment objects. It provides visualizations of every step of the pipeline. #TODO
+* [inspect_potato-model.ipynb](samples/potato/inspect_potato-model.ipynb) This notebook goes in depth into the steps performed to detect and segment objects. It provides visualizations of every step of the pipeline. 
 
 * [inspect_potato_weights.ipynb](samples/potato/inspect_potato_weights.ipynb)
 This notebooks inspects the weights of a trained model and looks for anomalies and odd patterns.#TODO
@@ -33,40 +38,56 @@ This notebooks inspects the weights of a trained model and looks for anomalies a
 
 # Step by Step Detection
 To help with debugging and understanding the model, there are 3 notebooks 
-([inspect_potato_data.ipynb](samples/potato/inspect_potato_data.ipynb), [inspect_potato_model.ipynb](samples/potato/inspect_potato_model.ipynb),
-[inspect_potato_weights.ipynb](samples/potato/inspect_potato_weights.ipynb)) that provide a lot of visualizations and allow running the model step by step to inspect the output at each point. Here are a few examples:
-
-## TODO: STEP BY STEP VISUALISATION
+([inspect_potato_data.ipynb](samples/potato/inspect_potato_data.ipynb), [inspect_potato-model.ipynb](samples/potato/inspect_potato-model.ipynb),
+[inspect_potato_weights.ipynb](samples/potato/inspect_potato_weights.ipynb)) that provide a lot of visualizations and allow running the model step by step to inspect the output at each point.
 
 # Training on potato dataset
 
 
 We're providing pre-trained weights for MS COCO to make it easier to start. You can use those weights as a starting point to train your own variation on the network. Training and evaluation code is in samples/potato/potato.py. You can import this module in Jupyter notebook (see the provided notebooks for examples) or you can run it directly from the command line as such:
 
-TODO: implement this code
 ```
 # Train a new model starting from pre-trained COCO weights
-python samples/potato/potato.py train --dataset=/path/to/coco/ --model=coco
+python samples/potato/potato.py train --dataset=/path/to/potato/  --model=coco --config_file=/path/to/config/file 
 
 # Train a new model starting from ImageNet weights
-python samples/potato/potato.py train --dataset=/path/to/coco/ --model=imagenet
+python samples/potato/potato.py train --dataset=/path/to/potato/ --model=imagenet --config_file=/path/to/config/file
 
 # Continue training a model that you had trained earlier
-python samples/potato/potato.py train --dataset=/path/to/coco/ --model=/path/to/weights.h5
+python samples/potato/potato.py train --dataset=/path/to/potato/  --model=/path/to/weights.h5 --config_file=/path/to/config/file
 
 # Continue training the last model you trained. This will find
 # the last trained weights in the model directory.
-python samples/potato/potato.py train --dataset=/path/to/coco/ --model=last
+python samples/potato/potato.py train --dataset=/path/to/potato/  --model=last --config_file=/path/to/config/file
 ```
-
 You can also run the POTATO evaluation code with:
-```
+```python
 # Run POTATO evaluation on the last trained model
-python samples/potato/potato.py evaluate --dataset=/path/to/coco/ --model=last
+python samples/potato/potato.py evaluate --dataset=/path/to/potato/ --model=last --config_file=/path/to/config/file
 ```
 
-The training schedule, learning rate, and other parameters should be set in `samples/potato/potato.py`.
+The training schedule, learning rate, and other parameters should be set in `samples/potato/potato.py` or equivalently in a config file located in`path/to/config_file/config.py` and indicated in the arguments of the command line `--config_file`. The structure of the config file should follow:
 
+```python
+import sys
+import os
+
+# Root directory of the project
+ROOT_DIR = os.path.abspath("../../")
+
+# Import Mask RCNN
+sys.path.append(ROOT_DIR)  # To find local version of the library
+
+from mrcnn.config import Config
+
+class PotatoConfig(Config):
+    # Configuration parameters
+    
+    
+
+```
+
+Two possible arguments can be added: `--augmentation` which sets on the data augmentation during training and `--epochs=30` for instance, which defines the number of epochs on which to train the model.
 
 # Training any other Dataset
  
@@ -121,7 +142,7 @@ Use this bibtex to cite this repository:
 ```
 
 ## Requirements
-Python 3.4, TensorFlow 1.3, Keras 2.0.8 and other common packages listed in `requirements.txt`.
+Python 3.4, TensorFlow-gpu 1.3, Keras 2.0.8 and other common packages listed in `requirements.txt`.
 
 ## Installation
 1. Install dependencies
@@ -155,3 +176,296 @@ image_width: int
 image_height: int
 dataset_split: str
 ```
+## Models trained
+### Transfer learning from coco weights to POTATO_V1 dataset  (18/03/2019)
+
+`POTATO_V1` is a dataset with instance segmented images of potatoes from UK fields but coarsely labeled. It can be found on `hb-mayfair` in`data/hb-datasets`. It has 280 images in the training set and 70 images in the validation set.
+
+The model which has been trained with the most optimal configuration can be found on the `hb-mayfair` in the shared folder `data/Mask-R-CNN-models/TL_COCO_POTATO_V1_v18032019`.
+
+The model is `model.h5` and   `config.py` contains the best model parameters.
+
+This model has been re-trained from the coco weights.
+
+The model has been trained and gave Mean AP the validation set of 70 images of `POTATO_V1`: 0.3435.
+
+*Training Loss*
+![First_training_train_loss_18032019](assets/training_loss.png)
+*Validation Loss*
+![First_training_val_loss_18032019](assets/val_loss.png)
+
+As the training as seeming not completely fully done, the model has been retrained again but only  slight improvements have been made.
+The final model gave Mean AP the test set of 70 images of `POTATO_V1`: 0.3653.
+
+*Re-training: Training Loss*
+![First_training_train_loss_18032019](assets/training_loss_retrain.png)
+*Re-training: Validation Loss*
+![First_training_val_loss_18032019](assets/val_loss_retrain.png)
+
+Hyper parameters (found in `TL_COCO_POTATO_V1_v18032019/config.py`) are as following and have been retrieved by a deep understanding on how works Mask R-CNN.
+ 
+```python
+NAME = "potato"
+
+# Train on 1 GPU and 8 images per GPU. We can put multiple images on each
+# GPU because the images are small. Batch size is 8 (GPUs * images/GPU).
+GPU_COUNT = 1
+IMAGES_PER_GPU = 8
+
+
+ # Number of classes (including background)
+NUM_CLASSES = 1 + 1  # background + potato
+
+
+# Use small images for faster training. Set the limits of the small side
+# the large side, and that determines the image shape.
+IMAGE_MIN_DIM = 256
+IMAGE_MAX_DIM = 256
+BACKBONE_STRIDES = [4,8,16,32,64]
+
+##********** 1)ANCHORS GENERATION - for RPN*********
+
+#     Length of square anchor side in pixels
+RPN_ANCHOR_SCALES = (8, 16, 24,32, 48) 
+TOP_DOWN_PYRAMID_SIZE = 256
+
+##********** 2)PROPOSAL LAYER ********* (no deep learning involved here)
+
+ # How many anchors per image to use for RPN training
+RPN_TRAIN_ANCHORS_PER_IMAGE = 128 ##in dataset generation
+
+## tf.image.non_max_suppression(boxes,scores,max_output_size,iou_threshold=0.5,...)
+# Non-max suppression threshold to filter RPN proposals.
+# You can increase this during training to generate more propsals.
+RPN_NMS_THRESHOLD=0.7
+#A float representing the threshold for deciding whether boxes overlap too much with respect to IOU.    
+## POST_NMS_ROIS_TRAINING~ POST_NMS_ROIS_INFERENCE ~proposal_count ~ max_output_size
+
+POST_NMS_ROIS_TRAINING=1500
+POST_NMS_ROIS_INFERENCE=800
+##********** 3a)TRAINING - DETECTION TARGET LAYER *********
+
+# Maximum number of ground truth instances to use in one image
+MAX_GT_INSTANCES = 128
+
+
+# Reduce training ROIs per image because the images are small and have
+# few objects. Aim to allow ROI sampling to pick 33% positive ROIs.
+# Number of ROIs per image to feed to classifier/mask heads
+# The Mask RCNN paper uses 512 but often the RPN doesn't generate
+# enough positive proposals to fill this and keep a positive:negative
+# ratio of 1:3. You can increase the number of proposals by adjusting
+# the RPN NMS threshold.
+TRAIN_ROIS_PER_IMAGE = 128
+# Percent of positive ROIs used to train classifier/mask heads
+ROI_POSITIVE_RATIO = 0.33
+
+##********** 3B)INFERENCE - DETECTION  LAYER *********
+
+# Non-maximum suppression threshold for detection in DetectionLater
+DETECTION_NMS_THRESHOLD=0.33#0.5 above iou_threshold
+
+
+# Minimum probability value to accept a detected instance
+# ROIs below this threshold are skipped in DetectionLater
+DETECTION_MIN_CONFIDENCE=0.9
+
+# Max number of final detections
+DETECTION_MAX_INSTANCES = 80
+
+
+# Use a small epoch since the data is simple
+STEPS_PER_EPOCH = 30
+
+# use small validation steps since the epoch is small
+VALIDATION_STEPS = 10
+LEARNING_RATE=0.001
+
+
+TRAIN_BN=True
+
+```
+
+### Transfer learning from coco weights to POTATO_V20 dataset
+`POTATO_V20` is a dataset with instance segmented images of potatoes in UK and Australia exactly labeled. It can be found on `hb-mayfair` in`data/hb-datasets`. It has 70 images in the training set and 18 in the validation set.
+
+The model which has been trained with the most optimal configuration can be found on the `hb-mayfair` in the shared folder `data/Mask-R-CNN-models/TL_COCO_POTATO_V20`.
+
+The model is `model.h5` and   `config.py` contains the best model parameters.
+
+This model has been re-trained from the coco weights.
+
+The model has been trained and gave Mean AP the validation set of 18 images of `POTATO_V20`: 0.3355.
+0.3355
+
+Hyper parameters (found in `TL_COCO_POTATO_V20/config.py`) are as following and have been retrieved by a deep understanding on how works Mask R-CNN.
+ 
+```python
+# Run detection on one image at a time
+
+
+NAME = "potato"
+
+# Train on 1 GPU and 1 image per GPU
+GPU_COUNT = 1
+IMAGES_PER_GPU = 1
+
+# Number of classes (including background)
+NUM_CLASSES = 1 + 1  # background + potato
+
+# Use small images for faster training. Set the limits of the small side
+# the large side, and that determines the image shape.
+IMAGE_MIN_DIM = 256
+IMAGE_MAX_DIM = 256
+BACKBONE_STRIDES = [4, 8, 16, 32, 64]
+
+##********** 1)ANCHORS GENERATION - for RPN*********
+
+#     Length of square anchor side in pixels
+RPN_ANCHOR_SCALES = (8, 16, 24, 32, 48)
+TOP_DOWN_PYRAMID_SIZE = 256
+
+##********** 2)PROPOSAL LAYER ********* (no deep learning involved here)
+
+# How many anchors per image to use for RPN training
+RPN_TRAIN_ANCHORS_PER_IMAGE = 128  ##in dataset generation
+
+## tf.image.non_max_suppression(boxes,scores,max_output_size,iou_threshold=0.5,...)
+# Non-max suppression threshold to filter RPN proposals.
+# You can increase this during training to generate more propsals.
+RPN_NMS_THRESHOLD = 0.7
+# A float representing the threshold for deciding whether boxes overlap too much with respect to IOU.
+## POST_NMS_ROIS_TRAINING~ POST_NMS_ROIS_INFERENCE ~proposal_count ~ max_output_size
+
+POST_NMS_ROIS_TRAINING = 1500
+POST_NMS_ROIS_INFERENCE = 800
+##********** 3a)TRAINING - DETECTION TARGET LAYER *********
+
+# Maximum number of ground truth instances to use in one image
+MAX_GT_INSTANCES = 128
+
+# Reduce training ROIs per image because the images are small and have
+# few objects. Aim to allow ROI sampling to pick 33% positive ROIs.
+# Number of ROIs per image to feed to classifier/mask heads
+# The Mask RCNN paper uses 512 but often the RPN doesn't generate
+# enough positive proposals to fill this and keep a positive:negative
+# ratio of 1:3. You can increase the number of proposals by adjusting
+# the RPN NMS threshold.
+TRAIN_ROIS_PER_IMAGE = 128
+# Percent of positive ROIs used to train classifier/mask heads
+ROI_POSITIVE_RATIO = 0.33
+
+##********** 3B)INFERENCE - DETECTION  LAYER *********
+
+# Non-maximum suppression threshold for detection in DetectionLater
+DETECTION_NMS_THRESHOLD = 0.5  # 0.5 above iou_threshold
+
+# Minimum probability value to accept a detected instance
+# ROIs below this threshold are skipped in DetectionLater
+DETECTION_MIN_CONFIDENCE = 0.7
+
+# Max number of final detections
+DETECTION_MAX_INSTANCES = 120
+
+# Use a small epoch since the data is simple
+STEPS_PER_EPOCH = 40
+
+# use small validation steps since the epoch is small
+VALIDATION_STEPS = 6
+LEARNING_RATE = 0.001
+
+TRAIN_BN = False
+```
+
+
+### Transfer learning from TL_COCO_POTATO_V1_v18032019 weights to POTATO_V20 dataset
+`POTATO_V20` is a dataset with instance segmented images of potatoes in UK and Australia exactly labeled. It can be found on `hb-mayfair` in`data/hb-datasets`. It has 70 images in the training set and 18 in the validation set.
+
+The model which has been trained with the most optimal configuration can be found on the `hb-mayfair` in the shared folder `data/Mask-R-CNN-models/TL_COCO_POTATO_V1_POTATO_V20`.
+
+The model is `model.h5` and   `config.py` contains the best model parameters.
+
+This model has been re-trained from the coco weights.
+
+The model has been trained and gave Mean AP the validation set of 18 images of `POTATO_V20`:  0.3738.
+0.3355
+
+Hyper parameters (found in `TL_COCO_POTATO_V1_POTATO_V20/config.py`) are as following and have been retrieved by a deep understanding on how works Mask R-CNN.
+ 
+```python
+# Run detection on one image at a time
+
+
+NAME = "potato"
+
+# Train on 1 GPU and 1 image per GPU
+GPU_COUNT = 1
+IMAGES_PER_GPU = 1
+
+# Number of classes (including background)
+NUM_CLASSES = 1 + 1  # background + potato
+
+# Use small images for faster training. Set the limits of the small side
+# the large side, and that determines the image shape.
+IMAGE_MIN_DIM = 256
+IMAGE_MAX_DIM = 256
+BACKBONE_STRIDES = [4, 8, 16, 32, 64]
+
+##********** 1)ANCHORS GENERATION - for RPN*********
+
+#     Length of square anchor side in pixels
+RPN_ANCHOR_SCALES = (8, 16, 24, 32, 48)
+TOP_DOWN_PYRAMID_SIZE = 256
+
+##********** 2)PROPOSAL LAYER ********* (no deep learning involved here)
+
+# How many anchors per image to use for RPN training
+RPN_TRAIN_ANCHORS_PER_IMAGE = 128  ##in dataset generation
+
+## tf.image.non_max_suppression(boxes,scores,max_output_size,iou_threshold=0.5,...)
+# Non-max suppression threshold to filter RPN proposals.
+# You can increase this during training to generate more propsals.
+RPN_NMS_THRESHOLD = 0.7
+# A float representing the threshold for deciding whether boxes overlap too much with respect to IOU.
+## POST_NMS_ROIS_TRAINING~ POST_NMS_ROIS_INFERENCE ~proposal_count ~ max_output_size
+
+POST_NMS_ROIS_TRAINING = 1500
+POST_NMS_ROIS_INFERENCE = 800
+##********** 3a)TRAINING - DETECTION TARGET LAYER *********
+
+# Maximum number of ground truth instances to use in one image
+MAX_GT_INSTANCES = 128
+
+# Reduce training ROIs per image because the images are small and have
+# few objects. Aim to allow ROI sampling to pick 33% positive ROIs.
+# Number of ROIs per image to feed to classifier/mask heads
+# The Mask RCNN paper uses 512 but often the RPN doesn't generate
+# enough positive proposals to fill this and keep a positive:negative
+# ratio of 1:3. You can increase the number of proposals by adjusting
+# the RPN NMS threshold.
+TRAIN_ROIS_PER_IMAGE = 128
+# Percent of positive ROIs used to train classifier/mask heads
+ROI_POSITIVE_RATIO = 0.33
+
+##********** 3B)INFERENCE - DETECTION  LAYER *********
+
+# Non-maximum suppression threshold for detection in DetectionLater
+DETECTION_NMS_THRESHOLD = 0.5  # 0.5 above iou_threshold
+
+# Minimum probability value to accept a detected instance
+# ROIs below this threshold are skipped in DetectionLater
+DETECTION_MIN_CONFIDENCE = 0.7
+
+# Max number of final detections
+DETECTION_MAX_INSTANCES = 120
+
+# Use a small epoch since the data is simple
+STEPS_PER_EPOCH = 40
+
+# use small validation steps since the epoch is small
+VALIDATION_STEPS = 6
+LEARNING_RATE = 0.001
+
+TRAIN_BN = False
+```
+
